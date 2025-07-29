@@ -16,6 +16,7 @@ import {
   Square,
   Palette,
   Rocket,
+  Brain,
 } from "lucide-react"
 import FlappyTriangle from "./flappy-triangle"
 import DinoGame from "./dino-game"
@@ -28,6 +29,7 @@ import OrbitDefense from "./orbit-defense"
 import ColorMatchGame from "./color-match-game"
 import SpaceInvadersGame from "./space-invaders-game"
 import TicTacToeGame from "./tic-tac-toe-game"
+import MemoryMatchGame from "./memory-match-game"
 
 type GameType =
   | "menu"
@@ -42,11 +44,21 @@ type GameType =
   | "color-match"
   | "space-invaders"
   | "tic-tac-toe"
+  | "memory-match"
 
 export default function GameDashboard() {
   const [currentGame, setCurrentGame] = useState<GameType>("menu")
 
   const games = [
+    {
+      id: "memory-match" as const,
+      title: "Memory Match",
+      description: "Test your memory by matching pairs of cards. Challenge yourself with different difficulty levels!",
+      icon: Brain,
+      color: "bg-pink-500",
+      themeColor: "#ec4899",
+      isNew: true,
+    },
     {
       id: "flappy" as const,
       title: "Triangle",
@@ -144,6 +156,8 @@ export default function GameDashboard() {
       themeColor: gameData ? gameData.themeColor : "#000000",
     }
     switch (currentGame) {
+      case "memory-match":
+        return <MemoryMatchGame {...commonProps} />
       case "flappy":
         return <FlappyTriangle {...commonProps} />
       case "dino":
@@ -203,6 +217,11 @@ export default function GameDashboard() {
               className="group relative overflow-hidden rounded-xl border-gray-200 hover:border-transparent transition-all duration-300 cursor-pointer"
               onClick={() => setCurrentGame(game.id)}
             >
+              {game.isNew && (
+                <div className="absolute top-2 right-2 bg-pink-500 text-white text-xs font-bold px-2 py-1 rounded-full z-10 transform group-hover:scale-110 transition-transform">
+                  NEW!
+                </div>
+              )}
               <div
                 className={`absolute inset-0 ${game.color} opacity-0 group-hover:opacity-100 transition-opacity duration-300`}
               />

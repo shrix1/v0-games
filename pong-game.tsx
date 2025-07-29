@@ -1,340 +1,304 @@
 "use client"
 
-import type React from "react"
-import { useEffect, useRef, useState, useCallback } from "react"
+import { useState, useEffect, useCallback, useRef } from "react"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
-import { Gamepad2 } from "lucide-react"
+import { ArrowLeft, Play, Pause, RotateCcw } from "lucide-react"
+
+interface Ball {
+  x: number
+  y: number
+  dx: number
+  dy: number
+  speed: number
+}
 
 interface Paddle {
   x: number
   y: number
   width: number
   height: number
-  dy: number
+  speed: number
 }
-interface Ball {
-  x: number
-  y: number
-  radius: number
-  dx: number
-  dy: number
-}
-
-const CANVAS_WIDTH = 800
-const CANVAS_HEIGHT = 600
-const PADDLE_WIDTH = 15
-const PADDLE_HEIGHT = 100
-const BALL_RADIUS = 10
-const PADDLE_SPEED = 6
-const BALL_SPEED = 4.5
 
 interface PongGameProps {
-  onBack: () => void
-  themeColor: string
+  onBack?: () => void
+  themeColor?: string
 }
 
-export default function PongGame({ onBack, themeColor }: PongGameProps) {
+const CANVAS_WIDTH = 600
+const CANVAS_HEIGHT = 400
+const PADDLE_WIDTH = 10
+const PADDLE_HEIGHT = 80
+const BALL_SIZE = 10
+const INITIAL_BALL_SPEED = 4
+
+export default function PongGame({ onBack, themeColor = "#3b82f6" }: PongGameProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
-  const gameLoopRef = useRef<number>()
-  const [gameState, setGameState] = useState<"menu" | "playing" | "gameOver">("menu")
+  const [ball, setBall] = useState<Ball>({
+    x: CANVAS_WIDTH / 2,
+    y: CANVAS_HEIGHT / 2,
+    dx: INITIAL_BALL_SPEED,
+    dy: INITIAL_BALL_SPEED,
+    speed: INITIAL_BALL_SPEED,
+  })
+  const [playerPaddle, setPlayerPaddle] = useState<Paddle>({
+    x: 20,
+    y: CANVAS_HEIGHT / 2 - PADDLE_HEIGHT / 2,
+    width: PADDLE_WIDTH,
+    height: PADDLE_HEIGHT,
+    speed: 6,
+  })
+  const [aiPaddle, setAiPaddle] = useState<Paddle>({
+    x: CANVAS_WIDTH - 30,
+    y: CANVAS_HEIGHT / 2 - PADDLE_HEIGHT / 2,
+    width: PADDLE_WIDTH,
+    height: PADDLE_HEIGHT,
+    speed: 4,
+  })
   const [playerScore, setPlayerScore] = useState(0)
   const [aiScore, setAiScore] = useState(0)
-  const [highScore, setHighScore] = useState(0)
+  const [gameRunning, setGameRunning] = useState(false)
+  const [gameOver, setGameOver] = useState(false)
+  const [keys, setKeys] = useState<{ [key: string]: boolean }>({})
 
-  const gameStateRef = useRef<{
-    playerPaddle: Paddle
-    aiPaddle: Paddle
-    ball: Ball
-    playerScore: number
-    aiScore: number
-    canvas: HTMLCanvasElement | null
-    ctx: CanvasRenderingContext2D | null
-    aiReactionDelay: number
-    aiLastUpdate: number
-  }>({
-    playerPaddle: { x: 0, y: CANVAS_HEIGHT / 2 - PADDLE_HEIGHT / 2, width: PADDLE_WIDTH, height: PADDLE_HEIGHT, dy: 0 },
-    aiPaddle: {
-      x: CANVAS_WIDTH - PADDLE_WIDTH,
-      y: CANVAS_HEIGHT / 2 - PADDLE_HEIGHT / 2,
-      width: PADDLE_WIDTH,
-      height: PADDLE_HEIGHT,
-      dy: 0,
-    },
-    ball: { x: CANVAS_WIDTH / 2, y: CANVAS_HEIGHT / 2, radius: BALL_RADIUS, dx: BALL_SPEED, dy: BALL_SPEED },
-    playerScore: 0,
-    aiScore: 0,
-    canvas: null,
-    ctx: null,
-    aiReactionDelay: 0,
-    aiLastUpdate: 0,
-  })
-
-  const resetBall = useCallback((servingPlayer: "player" | "ai") => {
-    const { ball } = gameStateRef.current
-    ball.x = CANVAS_WIDTH / 2
-    ball.y = CANVAS_HEIGHT / 2
-    ball.dx = servingPlayer === "player" ? BALL_SPEED : -BALL_SPEED
-    ball.dy = (Math.random() > 0.5 ? 1 : -1) * BALL_SPEED
-    gameStateRef.current.aiReactionDelay = Math.random() * 100 + 50
+  const resetBall = useCallback(() => {
+    setBall({
+      x: CANVAS_WIDTH / 2,
+      y: CANVAS_HEIGHT / 2,
+      dx: Math.random() > 0.5 ? INITIAL_BALL_SPEED : -INITIAL_BALL_SPEED,
+      dy: (Math.random() - 0.5) * INITIAL_BALL_SPEED,
+      speed: INITIAL_BALL_SPEED,
+    })
   }, [])
 
-  const initGame = useCallback(() => {
-    const canvas = canvasRef.current
-    if (!canvas) return
-    canvas.width = CANVAS_WIDTH
-    canvas.height = CANVAS_HEIGHT
-    gameStateRef.current = {
-      playerPaddle: {
-        x: 0,
-        y: CANVAS_HEIGHT / 2 - PADDLE_HEIGHT / 2,
-        width: PADDLE_WIDTH,
-        height: PADDLE_HEIGHT,
-        dy: 0,
-      },
-      aiPaddle: {
-        x: CANVAS_WIDTH - PADDLE_WIDTH,
-        y: CANVAS_HEIGHT / 2 - PADDLE_HEIGHT / 2,
-        width: PADDLE_WIDTH,
-        height: PADDLE_HEIGHT,
-        dy: 0,
-      },
-      ball: { x: CANVAS_WIDTH / 2, y: CANVAS_HEIGHT / 2, radius: BALL_RADIUS, dx: BALL_SPEED, dy: BALL_SPEED },
-      playerScore: 0,
-      aiScore: 0,
-      canvas,
-      ctx: canvas.getContext("2d"),
-      aiReactionDelay: Math.random() * 100 + 50,
-      aiLastUpdate: 0,
-    }
+  const resetGame = useCallback(() => {
     setPlayerScore(0)
     setAiScore(0)
-    resetBall("player")
+    setGameRunning(false)
+    setGameOver(false)
+    resetBall()
+    setPlayerPaddle((prev) => ({ ...prev, y: CANVAS_HEIGHT / 2 - PADDLE_HEIGHT / 2 }))
+    setAiPaddle((prev) => ({ ...prev, y: CANVAS_HEIGHT / 2 - PADDLE_HEIGHT / 2 }))
   }, [resetBall])
 
-  const startGame = useCallback(() => {
-    setGameState("playing")
-    initGame()
-  }, [initGame])
+  const checkCollision = useCallback((ball: Ball, paddle: Paddle): boolean => {
+    return (
+      ball.x < paddle.x + paddle.width &&
+      ball.x + BALL_SIZE > paddle.x &&
+      ball.y < paddle.y + paddle.height &&
+      ball.y + BALL_SIZE > paddle.y
+    )
+  }, [])
 
-  const endGame = () => {
-    setGameState("gameOver")
-    if (gameStateRef.current.playerScore > highScore) {
-      setHighScore(gameStateRef.current.playerScore)
+  const gameLoop = useCallback(() => {
+    if (!gameRunning || gameOver) return
+
+    // Move player paddle
+    setPlayerPaddle((prev) => {
+      let newY = prev.y
+      if (keys["ArrowUp"] && newY > 0) {
+        newY -= prev.speed
+      }
+      if (keys["ArrowDown"] && newY < CANVAS_HEIGHT - prev.height) {
+        newY += prev.speed
+      }
+      return { ...prev, y: newY }
+    })
+
+    // Move AI paddle
+    setAiPaddle((prev) => {
+      const ballCenterY = ball.y + BALL_SIZE / 2
+      const paddleCenterY = prev.y + prev.height / 2
+      let newY = prev.y
+
+      if (ballCenterY < paddleCenterY - 10) {
+        newY -= prev.speed
+      } else if (ballCenterY > paddleCenterY + 10) {
+        newY += prev.speed
+      }
+
+      newY = Math.max(0, Math.min(CANVAS_HEIGHT - prev.height, newY))
+      return { ...prev, y: newY }
+    })
+
+    // Move ball
+    setBall((prev) => {
+      const newBall = {
+        ...prev,
+        x: prev.x + prev.dx,
+        y: prev.y + prev.dy,
+      }
+
+      // Ball collision with top and bottom walls
+      if (newBall.y <= 0 || newBall.y >= CANVAS_HEIGHT - BALL_SIZE) {
+        newBall.dy = -newBall.dy
+      }
+
+      // Ball collision with paddles
+      if (checkCollision(newBall, playerPaddle)) {
+        newBall.dx = Math.abs(newBall.dx)
+        newBall.speed += 0.2
+        newBall.dx = newBall.speed * (newBall.dx > 0 ? 1 : -1)
+      }
+
+      if (checkCollision(newBall, aiPaddle)) {
+        newBall.dx = -Math.abs(newBall.dx)
+        newBall.speed += 0.2
+        newBall.dx = newBall.speed * (newBall.dx > 0 ? 1 : -1)
+      }
+
+      // Ball goes off screen (scoring)
+      if (newBall.x <= 0) {
+        setAiScore((prev) => prev + 1)
+        setTimeout(resetBall, 1000)
+        return prev
+      }
+
+      if (newBall.x >= CANVAS_WIDTH) {
+        setPlayerScore((prev) => prev + 1)
+        setTimeout(resetBall, 1000)
+        return prev
+      }
+
+      return newBall
+    })
+  }, [gameRunning, gameOver, keys, ball, playerPaddle, aiPaddle, checkCollision, resetBall])
+
+  // Game loop
+  useEffect(() => {
+    const interval = setInterval(gameLoop, 16)
+    return () => clearInterval(interval)
+  }, [gameLoop])
+
+  // Check for game over
+  useEffect(() => {
+    if (playerScore >= 5 || aiScore >= 5) {
+      setGameOver(true)
+      setGameRunning(false)
     }
-  }
+  }, [playerScore, aiScore])
 
-  const updateGame = useCallback(() => {
-    const { playerPaddle, aiPaddle, ball, canvas, ctx } = gameStateRef.current
-    if (!canvas || !ctx) return
+  // Canvas drawing
+  useEffect(() => {
+    const canvas = canvasRef.current
+    if (!canvas) return
 
-    ctx.fillStyle = "#fafafa"
-    ctx.fillRect(0, 0, canvas.width, canvas.height)
-    ctx.strokeStyle = "#e0e0e0"
+    const ctx = canvas.getContext("2d")
+    if (!ctx) return
+
+    // Clear canvas
+    ctx.fillStyle = "#1f2937"
+    ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT)
+
+    // Draw center line
+    ctx.strokeStyle = "#374151"
     ctx.lineWidth = 2
     ctx.setLineDash([10, 10])
     ctx.beginPath()
-    ctx.moveTo(canvas.width / 2, 0)
-    ctx.lineTo(canvas.width / 2, canvas.height)
+    ctx.moveTo(CANVAS_WIDTH / 2, 0)
+    ctx.lineTo(CANVAS_WIDTH / 2, CANVAS_HEIGHT)
     ctx.stroke()
     ctx.setLineDash([])
 
-    ball.x += ball.dx
-    ball.y += ball.dy
-    if (ball.y + ball.radius > canvas.height || ball.y - ball.radius < 0) ball.dy *= -1
-
-    if (
-      ball.x - ball.radius < playerPaddle.x + playerPaddle.width &&
-      ball.y + ball.radius > playerPaddle.y &&
-      ball.y - ball.radius < playerPaddle.y + playerPaddle.height &&
-      ball.dx < 0
-    ) {
-      ball.dx = Math.abs(ball.dx)
-      const hitPoint = (ball.y - (playerPaddle.y + playerPaddle.height / 2)) / (playerPaddle.height / 2)
-      ball.dy = hitPoint * BALL_SPEED
-    }
-    if (
-      ball.x + ball.radius > aiPaddle.x &&
-      ball.y + ball.radius > aiPaddle.y &&
-      ball.y - ball.radius < aiPaddle.y + aiPaddle.height &&
-      ball.dx > 0
-    ) {
-      ball.dx = -Math.abs(ball.dx)
-      const hitPoint = (ball.y - (aiPaddle.y + aiPaddle.height / 2)) / (aiPaddle.height / 2)
-      ball.dy = hitPoint * BALL_SPEED
-    }
-
-    if (ball.x - ball.radius > canvas.width) {
-      gameStateRef.current.playerScore++
-      setPlayerScore(gameStateRef.current.playerScore)
-      resetBall("ai")
-    } else if (ball.x + ball.radius < 0) {
-      gameStateRef.current.aiScore++
-      setAiScore(gameStateRef.current.aiScore)
-      resetBall("player")
-    }
-
-    const currentTime = performance.now()
-    if (currentTime - gameStateRef.current.aiLastUpdate > gameStateRef.current.aiReactionDelay) {
-      const ballCenterY = ball.y
-      const paddleCenterY = aiPaddle.y + aiPaddle.height / 2
-      const difference = ballCenterY - paddleCenterY
-      if (ball.dx > 0 && Math.abs(difference) > 10) {
-        if (difference > 0) aiPaddle.y += PADDLE_SPEED * 0.75
-        else aiPaddle.y -= PADDLE_SPEED * 0.75
-      }
-      if (Math.random() < 0.05) aiPaddle.y += (Math.random() - 0.5) * PADDLE_SPEED * 0.5
-      gameStateRef.current.aiLastUpdate = currentTime
-      gameStateRef.current.aiReactionDelay = Math.random() * 100 + 50
-    }
-    if (aiPaddle.y < 0) aiPaddle.y = 0
-    if (aiPaddle.y + aiPaddle.height > canvas.height) aiPaddle.y = canvas.height - aiPaddle.height
-
+    // Draw paddles
     ctx.fillStyle = themeColor
     ctx.fillRect(playerPaddle.x, playerPaddle.y, playerPaddle.width, playerPaddle.height)
-    ctx.fillStyle = "#000000"
     ctx.fillRect(aiPaddle.x, aiPaddle.y, aiPaddle.width, aiPaddle.height)
 
-    ctx.fillStyle = themeColor
-    ctx.beginPath()
-    ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2)
-    ctx.fill()
+    // Draw ball
+    ctx.fillStyle = "#fff"
+    ctx.fillRect(ball.x, ball.y, BALL_SIZE, BALL_SIZE)
 
-    ctx.font = "48px -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"
+    // Draw scores
+    ctx.fillStyle = "#fff"
+    ctx.font = "32px Arial"
     ctx.textAlign = "center"
-    ctx.fillStyle = themeColor
-    ctx.fillText(`${gameStateRef.current.playerScore}`, canvas.width / 2 - 80, 60)
-    ctx.fillStyle = "#171717"
-    ctx.fillText(`${gameStateRef.current.aiScore}`, canvas.width / 2 + 80, 60)
+    ctx.fillText(playerScore.toString(), CANVAS_WIDTH / 4, 50)
+    ctx.fillText(aiScore.toString(), (3 * CANVAS_WIDTH) / 4, 50)
 
-    if (gameStateRef.current.playerScore >= 5 || gameStateRef.current.aiScore >= 5) {
-      endGame()
-      return
+    // Draw game over overlay
+    if (gameOver) {
+      ctx.fillStyle = "rgba(0, 0, 0, 0.7)"
+      ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT)
+      ctx.fillStyle = "#fff"
+      ctx.font = "24px Arial"
+      ctx.fillText("Game Over!", CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2 - 30)
+      ctx.font = "18px Arial"
+      const winner = playerScore > aiScore ? "You Win!" : "AI Wins!"
+      ctx.fillText(winner, CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2)
+      ctx.fillText("Press Reset to play again", CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2 + 30)
     }
-    if (gameState === "playing") gameLoopRef.current = requestAnimationFrame(updateGame)
-  }, [gameState, resetBall, themeColor])
 
-  const handleMouseMove = useCallback(
-    (e: React.MouseEvent) => {
-      if (gameState !== "playing") return
-      const canvas = canvasRef.current
-      if (!canvas) return
-      const rect = canvas.getBoundingClientRect()
-      const mouseY = e.clientY - rect.top
-      let newY = mouseY - gameStateRef.current.playerPaddle.height / 2
-      if (newY < 0) newY = 0
-      if (newY + gameStateRef.current.playerPaddle.height > canvas.height)
-        newY = canvas.height - gameStateRef.current.playerPaddle.height
-      gameStateRef.current.playerPaddle.y = newY
-    },
-    [gameState],
-  )
+    ctx.textAlign = "left"
+  }, [ball, playerPaddle, aiPaddle, playerScore, aiScore, gameOver, themeColor])
 
+  // Keyboard controls
   useEffect(() => {
-    initGame()
-  }, [initGame])
-  useEffect(() => {
-    if (gameState === "playing") gameLoopRef.current = requestAnimationFrame(updateGame)
-    else if (gameLoopRef.current) cancelAnimationFrame(gameLoopRef.current)
+    const handleKeyDown = (event: KeyboardEvent) => {
+      setKeys((prev) => ({ ...prev, [event.key]: true }))
+      if (event.key === " ") {
+        event.preventDefault()
+        if (!gameRunning && !gameOver) {
+          setGameRunning(true)
+        }
+      }
+    }
+
+    const handleKeyUp = (event: KeyboardEvent) => {
+      setKeys((prev) => ({ ...prev, [event.key]: false }))
+    }
+
+    window.addEventListener("keydown", handleKeyDown)
+    window.addEventListener("keyup", handleKeyUp)
     return () => {
-      if (gameLoopRef.current) cancelAnimationFrame(gameLoopRef.current)
+      window.removeEventListener("keydown", handleKeyDown)
+      window.removeEventListener("keyup", handleKeyUp)
     }
-  }, [gameState, updateGame])
-
-  useEffect(() => {
-    if (gameState !== "gameOver") return
-    const handleGameOverKeys = (e: KeyboardEvent) => {
-      if (e.key === "Enter") startGame()
-      else if (e.key === "Escape") setGameState("menu")
-    }
-    window.addEventListener("keydown", handleGameOverKeys)
-    return () => window.removeEventListener("keydown", handleGameOverKeys)
-  }, [gameState, startGame])
+  }, [gameRunning, gameOver])
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-white p-8">
-      <div className="relative">
-        <canvas
-          ref={canvasRef}
-          className="border border-gray-200 rounded-lg shadow-sm cursor-none"
-          style={{ maxWidth: "100%", height: "auto" }}
-          onMouseMove={handleMouseMove}
-        />
-        {gameState === "menu" && (
-          <div className="absolute inset-0 flex items-center justify-center bg-white/95 backdrop-blur-sm rounded-lg">
-            <Card className="p-8 text-center border-gray-200 shadow-sm w-96">
-              <div className="mb-6">
-                <div
-                  className="w-8 h-8 mx-auto mb-4 rounded-lg flex items-center justify-center"
-                  style={{ backgroundColor: themeColor }}
-                >
-                  <Gamepad2 className="w-6 h-6 text-white" />
-                </div>
-                <h1 className="text-2xl font-medium text-gray-900 mb-2">Pong</h1>
-                <p className="text-sm text-gray-600 mb-4">First to 5 points wins!</p>
-                <div className="bg-gray-50 rounded-lg p-3 text-left text-xs text-gray-600 space-y-1">
-                  <div className="font-medium text-gray-800">Controls:</div>
-                  <div>
-                    <kbd className="px-2 py-1 bg-white rounded border text-xs">Mouse</kbd> to Move Paddle
-                  </div>
-                </div>
-              </div>
-              <Button
-                onClick={startGame}
-                style={{ backgroundColor: themeColor }}
-                className="text-white px-6 py-2 text-sm font-medium"
-              >
-                Start Game
-              </Button>
-              {highScore > 0 && <p className="mt-4 text-xs text-gray-500">Best Score: {highScore}</p>}
-            </Card>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex flex-col items-center justify-center p-4">
+      <div className="max-w-4xl w-full">
+        <div className="flex items-center justify-between mb-4">
+          <Button onClick={onBack} variant="outline" size="sm">
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Back
+          </Button>
+          <h1 className="text-2xl font-bold text-gray-800">Pong</h1>
+          <Button onClick={resetGame} variant="outline" size="sm">
+            <RotateCcw className="w-4 h-4 mr-2" />
+            Reset
+          </Button>
+        </div>
+
+        <Card className="p-4 mb-4">
+          <canvas
+            ref={canvasRef}
+            width={CANVAS_WIDTH}
+            height={CANVAS_HEIGHT}
+            className="border border-gray-300 mx-auto block"
+          />
+        </Card>
+
+        <div className="text-center space-y-2">
+          <div className="flex justify-center gap-8 text-lg font-semibold text-gray-700">
+            <span>You: {playerScore}</span>
+            <span>AI: {aiScore}</span>
           </div>
-        )}
-        {gameState === "gameOver" && (
-          <div className="absolute inset-0 flex items-center justify-center bg-white/95 backdrop-blur-sm rounded-lg">
-            <Card className="p-8 text-center border-gray-200 shadow-sm w-96">
-              <h2 className="text-lg font-medium text-gray-500 mb-1">Pong</h2>
-              <h3 className="text-xl font-medium text-gray-900 mb-4">
-                {playerScore > aiScore ? "You Win! 🎉" : "AI Wins! 🤖"}
-              </h3>
-              <div className="space-y-2 mb-6">
-                <p className="text-2xl font-mono text-gray-900">
-                  <span style={{ color: themeColor }}>{playerScore}</span> - {aiScore}
-                </p>
-                <p className="text-xs text-gray-500">Your Best: {highScore}</p>
-              </div>
-              <div className="flex gap-3 justify-center">
-                <Button
-                  onClick={startGame}
-                  style={{ backgroundColor: themeColor }}
-                  className="text-white px-4 py-2 text-sm font-medium"
-                >
-                  Play Again
-                </Button>
-                <Button
-                  onClick={() => setGameState("menu")}
-                  variant="outline"
-                  className="border-gray-200 text-gray-700 hover:bg-gray-50 px-4 py-2 text-sm font-medium"
-                >
-                  Menu
-                </Button>
-              </div>
-              <div className="mt-4 text-xs text-gray-500 space-x-4">
-                <span>
-                  <kbd className="px-1 py-0.5 bg-gray-100 rounded text-xs">Enter</kbd> Again
-                </span>
-                <span>
-                  <kbd className="px-1 py-0.5 bg-gray-100 rounded text-xs">Esc</kbd> Menu
-                </span>
-              </div>
-            </Card>
+          <div className="flex justify-center gap-2">
+            <Button
+              onClick={() => setGameRunning(!gameRunning)}
+              disabled={gameOver}
+              size="sm"
+              style={{ backgroundColor: gameRunning ? undefined : themeColor }}
+            >
+              {gameRunning ? <Pause className="w-4 h-4 mr-2" /> : <Play className="w-4 h-4 mr-2" />}
+              {gameRunning ? "Pause" : "Start"}
+            </Button>
           </div>
-        )}
-      </div>
-      <div className="mt-6 text-center">
-        <p className="text-xs text-gray-500">
-          {gameState === "playing" ? "Move your mouse to control the paddle" : "A v0 Mini Game"}
-        </p>
+          <p className="text-sm text-gray-600">Use arrow keys to move your paddle • First to 5 wins!</p>
+        </div>
       </div>
     </div>
   )

@@ -1,7 +1,5 @@
-"use client"
-
 import GameDashboard from "../game-dashboard"
 
-export default function Page() {
+export default function Home() {
   return <GameDashboard />
 }
