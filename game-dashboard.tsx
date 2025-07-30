@@ -17,6 +17,7 @@ import {
   Palette,
   Rocket,
   Brain,
+  Bomb,
 } from "lucide-react"
 import FlappyTriangle from "./flappy-triangle"
 import DinoGame from "./dino-game"
@@ -30,6 +31,9 @@ import ColorMatchGame from "./color-match-game"
 import SpaceInvadersGame from "./space-invaders-game"
 import TicTacToeGame from "./tic-tac-toe-game"
 import MemoryMatchGame from "./memory-match-game"
+import MinesweeperGame from "./minesweeper-game"
+// Remove this import
+// import Game2048 from "./game-2048"
 
 type GameType =
   | "menu"
@@ -45,6 +49,7 @@ type GameType =
   | "space-invaders"
   | "tic-tac-toe"
   | "memory-match"
+  | "minesweeper"
 
 export default function GameDashboard() {
   const [currentGame, setCurrentGame] = useState<GameType>("menu")
@@ -53,10 +58,19 @@ export default function GameDashboard() {
     {
       id: "memory-match" as const,
       title: "Memory Match",
-      description: "Test your memory by matching pairs of cards. Challenge yourself with different difficulty levels!",
+      description: "Match pairs of cards with memory",
       icon: Brain,
       color: "bg-pink-500",
       themeColor: "#ec4899",
+      isNew: true,
+    },
+    {
+      id: "minesweeper" as const,
+      title: "Minesweeper",
+      description: "Clear the board without hitting mines",
+      icon: Bomb,
+      color: "bg-gray-700",
+      themeColor: "#374151",
       isNew: true,
     },
     {
@@ -158,6 +172,8 @@ export default function GameDashboard() {
     switch (currentGame) {
       case "memory-match":
         return <MemoryMatchGame {...commonProps} />
+      case "minesweeper":
+        return <MinesweeperGame {...commonProps} />
       case "flappy":
         return <FlappyTriangle {...commonProps} />
       case "dino":
