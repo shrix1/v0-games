@@ -18,6 +18,7 @@ import {
   Rocket,
   Brain,
   Bomb,
+  BookOpen,
 } from "lucide-react"
 import FlappyTriangle from "./flappy-triangle"
 import DinoGame from "./dino-game"
@@ -32,11 +33,13 @@ import SpaceInvadersGame from "./space-invaders-game"
 import TicTacToeGame from "./tic-tac-toe-game"
 import MemoryMatchGame from "./memory-match-game"
 import MinesweeperGame from "./minesweeper-game"
+import WordScrambleGame from "./word-scramble-game"
 // Remove this import
 // import Game2048 from "./game-2048"
 
 type GameType =
   | "menu"
+  | "word-scramble"
   | "flappy"
   | "dino"
   | "snake"
@@ -56,6 +59,15 @@ export default function GameDashboard() {
 
   const games = [
     {
+      id: "word-scramble" as const,
+      title: "Word Scramble",
+      description: "Unscramble letters to form words quickly",
+      icon: BookOpen,
+      color: "bg-purple-500",
+      themeColor: "#8b5cf6",
+      isNew: true,
+    },
+    {
       id: "memory-match" as const,
       title: "Memory Match",
       description: "Match pairs of cards with memory",
@@ -71,7 +83,6 @@ export default function GameDashboard() {
       icon: Bomb,
       color: "bg-gray-700",
       themeColor: "#374151",
-      isNew: true,
     },
     {
       id: "flappy" as const,
@@ -170,6 +181,8 @@ export default function GameDashboard() {
       themeColor: gameData ? gameData.themeColor : "#000000",
     }
     switch (currentGame) {
+      case "word-scramble":
+        return <WordScrambleGame {...commonProps} />
       case "memory-match":
         return <MemoryMatchGame {...commonProps} />
       case "minesweeper":
