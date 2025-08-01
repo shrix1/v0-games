@@ -19,6 +19,7 @@ import {
   Brain,
   Bomb,
   BookOpen,
+  Sparkles,
 } from "lucide-react"
 import FlappyTriangle from "./flappy-triangle"
 import DinoGame from "./dino-game"
@@ -34,11 +35,11 @@ import TicTacToeGame from "./tic-tac-toe-game"
 import MemoryMatchGame from "./memory-match-game"
 import MinesweeperGame from "./minesweeper-game"
 import WordScrambleGame from "./word-scramble-game"
-// Remove this import
-// import Game2048 from "./game-2048"
+import BubblePopGame from "./bubble-pop-game"
 
 type GameType =
   | "menu"
+  | "bubble-pop"
   | "word-scramble"
   | "flappy"
   | "dino"
@@ -54,10 +55,23 @@ type GameType =
   | "memory-match"
   | "minesweeper"
 
+type Category = "All" | "Arcade" | "Puzzle" | "Strategy" | "Action"
+
 export default function GameDashboard() {
   const [currentGame, setCurrentGame] = useState<GameType>("menu")
+  const [selectedCategory, setSelectedCategory] = useState<Category>("All")
 
   const games = [
+    {
+      id: "bubble-pop" as const,
+      title: "Bubble Pop",
+      description: "Pop colorful bubbles and build combos",
+      icon: Sparkles,
+      color: "bg-cyan-500",
+      themeColor: "#4ecdc4",
+      category: "Arcade" as const,
+      isNew: true,
+    },
     {
       id: "word-scramble" as const,
       title: "Word Scramble",
@@ -65,6 +79,7 @@ export default function GameDashboard() {
       icon: BookOpen,
       color: "bg-purple-500",
       themeColor: "#8b5cf6",
+      category: "Puzzle" as const,
       isNew: true,
     },
     {
@@ -74,6 +89,7 @@ export default function GameDashboard() {
       icon: Brain,
       color: "bg-pink-500",
       themeColor: "#ec4899",
+      category: "Puzzle" as const,
       isNew: true,
     },
     {
@@ -83,6 +99,7 @@ export default function GameDashboard() {
       icon: Bomb,
       color: "bg-gray-700",
       themeColor: "#374151",
+      category: "Strategy" as const,
     },
     {
       id: "flappy" as const,
@@ -91,6 +108,7 @@ export default function GameDashboard() {
       icon: Triangle,
       color: "bg-yellow-500",
       themeColor: "#f59e0b",
+      category: "Arcade" as const,
     },
     {
       id: "dino" as const,
@@ -99,6 +117,7 @@ export default function GameDashboard() {
       icon: PawPrint,
       color: "bg-gray-700",
       themeColor: "#374151",
+      category: "Arcade" as const,
     },
     {
       id: "snake" as const,
@@ -107,6 +126,7 @@ export default function GameDashboard() {
       icon: Grid3X3,
       color: "bg-green-500",
       themeColor: "#22c55e",
+      category: "Arcade" as const,
     },
     {
       id: "pong" as const,
@@ -115,6 +135,7 @@ export default function GameDashboard() {
       icon: Gamepad2,
       color: "bg-blue-500",
       themeColor: "#3b82f6",
+      category: "Arcade" as const,
     },
     {
       id: "reaction" as const,
@@ -123,6 +144,7 @@ export default function GameDashboard() {
       icon: Timer,
       color: "bg-red-500",
       themeColor: "#ef4444",
+      category: "Action" as const,
     },
     {
       id: "tetris" as const,
@@ -131,6 +153,7 @@ export default function GameDashboard() {
       icon: Square,
       color: "bg-purple-500",
       themeColor: "#a855f7",
+      category: "Puzzle" as const,
     },
     {
       id: "breakout" as const,
@@ -139,6 +162,7 @@ export default function GameDashboard() {
       icon: Zap,
       color: "bg-orange-500",
       themeColor: "#f97316",
+      category: "Arcade" as const,
     },
     {
       id: "orbit-defense" as const,
@@ -147,6 +171,7 @@ export default function GameDashboard() {
       icon: Target,
       color: "bg-indigo-500",
       themeColor: "#6366f1",
+      category: "Strategy" as const,
     },
     {
       id: "color-match" as const,
@@ -155,6 +180,7 @@ export default function GameDashboard() {
       icon: Palette,
       color: "bg-pink-500",
       themeColor: "#ec4899",
+      category: "Action" as const,
     },
     {
       id: "space-invaders" as const,
@@ -163,6 +189,7 @@ export default function GameDashboard() {
       icon: Rocket,
       color: "bg-cyan-500",
       themeColor: "#06b6d4",
+      category: "Action" as const,
     },
     {
       id: "tic-tac-toe" as const,
@@ -171,8 +198,13 @@ export default function GameDashboard() {
       icon: Grid3X3,
       color: "bg-emerald-500",
       themeColor: "#10b981",
+      category: "Strategy" as const,
     },
   ]
+
+  const categories: Category[] = ["All", "Arcade", "Puzzle", "Strategy", "Action"]
+
+  const filteredGames = selectedCategory === "All" ? games : games.filter((game) => game.category === selectedCategory)
 
   const renderGame = () => {
     const gameData = games.find((g) => g.id === currentGame)
@@ -181,6 +213,8 @@ export default function GameDashboard() {
       themeColor: gameData ? gameData.themeColor : "#000000",
     }
     switch (currentGame) {
+      case "bubble-pop":
+        return <BubblePopGame {...commonProps} />
       case "word-scramble":
         return <WordScrambleGame {...commonProps} />
       case "memory-match":
@@ -232,64 +266,77 @@ export default function GameDashboard() {
   }
 
   return (
-    <div className="min-h-screen w-full bg-gray-50 flex flex-col items-center justify-center p-4 sm:p-8">
-      <div className="max-w-7xl w-full">
-        <div className="text-center mb-10">
-          <h1 className="text-4xl sm:text-5xl font-bold text-gray-900 mb-3">v0 Mini Game Arcade</h1>
-          <p className="text-gray-600 text-lg font-mono">A collection of simple games build with v0.dev</p>
+    <div className="min-h-screen w-full bg-white">
+      <div className="max-w-6xl mx-auto px-4 py-16">
+        {/* Header */}
+        <div className="text-center mb-12">
+          <p className="text-sm text-gray-500 mb-4">
+            Crafted on v0.dev by{" "}
+            <a
+              href="https://x.com/shribuilds"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-medium text-black underline underline-offset-2"
+            >
+              shrix1
+            </a>
+          </p>
+          <h1 className="text-4xl sm:text-5xl font-bold text-black mb-4">v0 Mini Game Arcade</h1>
+          <p className="text-gray-600 text-lg">A collection of simple games build with v0.dev</p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {games.map((game) => (
+        {/* Category Filter */}
+        <div className="flex flex-wrap justify-center gap-2 mb-12">
+          {categories.map((category) => (
+            <Button
+              key={category}
+              variant={selectedCategory === category ? "default" : "ghost"}
+              onClick={() => setSelectedCategory(category)}
+              className={`px-4 py-2 text-sm font-medium rounded-lg transition-all ${
+                selectedCategory === category
+                  ? "bg-black text-white hover:bg-gray-800"
+                  : "text-gray-600 hover:text-black hover:bg-gray-50"
+              }`}
+            >
+              {category}
+            </Button>
+          ))}
+        </div>
+
+        {/* Games Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          {filteredGames.map((game) => (
             <Card
               key={game.id}
-              className="group relative overflow-hidden rounded-xl border-gray-200 hover:border-transparent transition-all duration-300 cursor-pointer"
+              className="group relative overflow-hidden rounded-xl border border-gray-200 hover:border-gray-300 transition-all duration-200 cursor-pointer bg-white hover:shadow-lg"
               onClick={() => setCurrentGame(game.id)}
             >
               {game.isNew && (
-                <div className="absolute top-2 right-2 bg-pink-500 text-white text-xs font-bold px-2 py-1 rounded-full z-10 transform group-hover:scale-110 transition-transform">
-                  NEW!
+                <div className="absolute top-3 right-3 bg-black text-white text-xs font-medium px-2 py-1 rounded-full z-10">
+                  NEW
                 </div>
               )}
-              <div
-                className={`absolute inset-0 ${game.color} opacity-0 group-hover:opacity-100 transition-opacity duration-300`}
-              />
-              <div className="relative p-6 bg-white group-hover:bg-transparent transition-colors duration-300 h-full flex flex-col">
-                <div className="flex items-start justify-between">
-                  <div
-                    className={`p-3 rounded-lg ${game.color} text-white group-hover:bg-white/20 transition-colors duration-300`}
-                  >
-                    <game.icon className="w-6 h-6" />
+              <div className="p-6">
+                <div className="flex items-start justify-between mb-4">
+                  <div className={`p-3 rounded-lg ${game.color} text-white`}>
+                    <game.icon className="w-5 h-5" />
                   </div>
-                  <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                    <Play className="w-6 h-6 text-white" />
+                  <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                    <Play className="w-5 h-5 text-gray-400" />
                   </div>
                 </div>
-                <div className="mt-4 flex-grow">
-                  <CardTitle className="text-xl font-semibold text-gray-900 group-hover:text-white transition-colors duration-300">
-                    {game.title}
-                  </CardTitle>
-                  <CardDescription className="text-gray-600 group-hover:text-white/80 transition-colors duration-300 mt-2 text-sm leading-relaxed font-mono">
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <CardTitle className="text-lg font-semibold text-black">{game.title}</CardTitle>
+                    <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full">{game.category}</span>
+                  </div>
+                  <CardDescription className="text-gray-600 text-sm leading-relaxed">
                     {game.description}
                   </CardDescription>
                 </div>
               </div>
             </Card>
           ))}
-        </div>
-
-        <div className="mt-12 text-center">
-          <p className="text-sm text-gray-500 font-mono">
-            Crafted on v0.dev by{" "}
-            <a
-              href="https://x.com/shribuilds"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="font-medium text-gray-700 underline underline-offset-4 hover:text-black transition-colors"
-            >
-              shrix1
-            </a>
-          </p>
         </div>
       </div>
     </div>
