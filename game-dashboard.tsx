@@ -20,6 +20,7 @@ import {
   Bomb,
   BookOpen,
   Sparkles,
+  Coins,
 } from "lucide-react"
 import FlappyTriangle from "./flappy-triangle"
 import DinoGame from "./dino-game"
@@ -36,9 +37,11 @@ import MemoryMatchGame from "./memory-match-game"
 import MinesweeperGame from "./minesweeper-game"
 import WordScrambleGame from "./word-scramble-game"
 import BubblePopGame from "./bubble-pop-game"
+import CoinCollectorGame from "./coin-collector-game"
 
 type GameType =
   | "menu"
+  | "coin-collector"
   | "bubble-pop"
   | "word-scramble"
   | "flappy"
@@ -62,6 +65,16 @@ export default function GameDashboard() {
   const [selectedCategory, setSelectedCategory] = useState<Category>("All")
 
   const games = [
+    {
+      id: "coin-collector" as const,
+      title: "Coin Collector",
+      description: "Jump and collect coins in this platformer adventure",
+      icon: Coins,
+      color: "bg-yellow-500",
+      themeColor: "#f59e0b",
+      category: "Arcade" as const,
+      isNew: true,
+    },
     {
       id: "bubble-pop" as const,
       title: "Bubble Pop",
@@ -213,6 +226,8 @@ export default function GameDashboard() {
       themeColor: gameData ? gameData.themeColor : "#000000",
     }
     switch (currentGame) {
+      case "coin-collector":
+        return <CoinCollectorGame {...commonProps} />
       case "bubble-pop":
         return <BubblePopGame {...commonProps} />
       case "word-scramble":
