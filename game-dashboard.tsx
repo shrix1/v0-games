@@ -21,6 +21,7 @@ import {
   BookOpen,
   Sparkles,
   Coins,
+  Circle,
 } from "lucide-react"
 import FlappyTriangle from "./flappy-triangle"
 import DinoGame from "./dino-game"
@@ -38,6 +39,7 @@ import MinesweeperGame from "./minesweeper-game"
 import WordScrambleGame from "./word-scramble-game"
 import BubblePopGame from "./bubble-pop-game"
 import CoinCollectorGame from "./coin-collector-game"
+import ConnectFourGame from "./connect-four-game"
 
 type GameType =
   | "menu"
@@ -57,6 +59,7 @@ type GameType =
   | "tic-tac-toe"
   | "memory-match"
   | "minesweeper"
+  | "connect-four"
 
 type Category = "All" | "Arcade" | "Puzzle" | "Strategy" | "Action"
 
@@ -65,27 +68,17 @@ export default function GameDashboard() {
   const [selectedCategory, setSelectedCategory] = useState<Category>("All")
 
   const games = [
-    {
-      id: "coin-collector" as const,
-      title: "Coin Collector",
-      description: "Jump and collect coins in this platformer adventure",
-      icon: Coins,
-      color: "bg-yellow-500",
-      themeColor: "#f59e0b",
-      category: "Arcade" as const,
+      {
+      id: "connect-four" as const,
+      title: "Connect Four",
+      description: "Drop pieces to get four in a row - play vs friends or CPU",
+      icon: Circle,
+      color: "bg-red-500",
+      themeColor: "#ef4444",
+      category: "Strategy" as const,
       isNew: true,
     },
-    {
-      id: "bubble-pop" as const,
-      title: "Bubble Pop",
-      description: "Pop colorful bubbles and build combos",
-      icon: Sparkles,
-      color: "bg-cyan-500",
-      themeColor: "#4ecdc4",
-      category: "Arcade" as const,
-      isNew: true,
-    },
-    {
+        {
       id: "word-scramble" as const,
       title: "Word Scramble",
       description: "Unscramble letters to form words quickly",
@@ -95,7 +88,7 @@ export default function GameDashboard() {
       category: "Puzzle" as const,
       isNew: true,
     },
-    {
+        {
       id: "memory-match" as const,
       title: "Memory Match",
       description: "Match pairs of cards with memory",
@@ -105,6 +98,25 @@ export default function GameDashboard() {
       category: "Puzzle" as const,
       isNew: true,
     },
+    {
+      id: "coin-collector" as const,
+      title: "Coin Collector",
+      description: "Jump and collect coins in this platformer adventure",
+      icon: Coins,
+      color: "bg-yellow-500",
+      themeColor: "#f59e0b",
+      category: "Arcade" as const,
+    },
+    {
+      id: "bubble-pop" as const,
+      title: "Bubble Pop",
+      description: "Pop colorful bubbles and build combos",
+      icon: Sparkles,
+      color: "bg-cyan-500",
+      themeColor: "#4ecdc4",
+      category: "Arcade" as const,
+    },
+
     {
       id: "minesweeper" as const,
       title: "Minesweeper",
@@ -232,6 +244,8 @@ export default function GameDashboard() {
         return <BubblePopGame {...commonProps} />
       case "word-scramble":
         return <WordScrambleGame {...commonProps} />
+      case "connect-four":
+        return <ConnectFourGame {...commonProps} />
       case "memory-match":
         return <MemoryMatchGame {...commonProps} />
       case "minesweeper":
