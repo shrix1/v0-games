@@ -40,9 +40,11 @@ import WordScrambleGame from "./word-scramble-game"
 import BubblePopGame from "./bubble-pop-game"
 import CoinCollectorGame from "./coin-collector-game"
 import ConnectFourGame from "./connect-four-game"
+import WhackAMoleGame from "./whack-a-mole-game"
 
 type GameType =
   | "menu"
+  | "whack-a-mole"
   | "coin-collector"
   | "bubble-pop"
   | "word-scramble"
@@ -68,7 +70,17 @@ export default function GameDashboard() {
   const [selectedCategory, setSelectedCategory] = useState<Category>("All")
 
   const games = [
-      {
+    {
+      id: "whack-a-mole" as const,
+      title: "Whack-a-Mole",
+      description: "Quick reflexes needed - whack the moles before they hide!",
+      icon: Target,
+      color: "bg-green-500",
+      themeColor: "#22c55e",
+      category: "Action" as const,
+      isNew: true,
+    },
+    {
       id: "connect-four" as const,
       title: "Connect Four",
       description: "Drop pieces to get four in a row - play vs friends or CPU",
@@ -78,7 +90,7 @@ export default function GameDashboard() {
       category: "Strategy" as const,
       isNew: true,
     },
-        {
+    {
       id: "word-scramble" as const,
       title: "Word Scramble",
       description: "Unscramble letters to form words quickly",
@@ -88,7 +100,7 @@ export default function GameDashboard() {
       category: "Puzzle" as const,
       isNew: true,
     },
-        {
+    {
       id: "memory-match" as const,
       title: "Memory Match",
       description: "Match pairs of cards with memory",
@@ -116,7 +128,6 @@ export default function GameDashboard() {
       themeColor: "#4ecdc4",
       category: "Arcade" as const,
     },
-
     {
       id: "minesweeper" as const,
       title: "Minesweeper",
@@ -238,6 +249,8 @@ export default function GameDashboard() {
       themeColor: gameData ? gameData.themeColor : "#000000",
     }
     switch (currentGame) {
+      case "whack-a-mole":
+        return <WhackAMoleGame {...commonProps} />
       case "coin-collector":
         return <CoinCollectorGame {...commonProps} />
       case "bubble-pop":
