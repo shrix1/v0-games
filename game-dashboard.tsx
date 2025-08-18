@@ -41,9 +41,11 @@ import BubblePopGame from "./bubble-pop-game"
 import CoinCollectorGame from "./coin-collector-game"
 import ConnectFourGame from "./connect-four-game"
 import WhackAMoleGame from "./whack-a-mole-game"
+import SimonSaysGame from "./simon-says-game"
 
 type GameType =
   | "menu"
+  | "simon-says"
   | "whack-a-mole"
   | "coin-collector"
   | "bubble-pop"
@@ -70,6 +72,16 @@ export default function GameDashboard() {
   const [selectedCategory, setSelectedCategory] = useState<Category>("All")
 
   const games = [
+    {
+      id: "simon-says" as const,
+      title: "Simon Says",
+      description: "Watch the pattern and repeat it back - test your memory!",
+      icon: Brain,
+      color: "bg-purple-600",
+      themeColor: "#9333ea",
+      category: "Action" as const,
+      isNew: true,
+    },
     {
       id: "whack-a-mole" as const,
       title: "Whack-a-Mole",
@@ -108,7 +120,6 @@ export default function GameDashboard() {
       color: "bg-pink-500",
       themeColor: "#ec4899",
       category: "Puzzle" as const,
-      isNew: true,
     },
     {
       id: "coin-collector" as const,
@@ -249,6 +260,8 @@ export default function GameDashboard() {
       themeColor: gameData ? gameData.themeColor : "#000000",
     }
     switch (currentGame) {
+      case "simon-says":
+        return <SimonSaysGame {...commonProps} />
       case "whack-a-mole":
         return <WhackAMoleGame {...commonProps} />
       case "coin-collector":
