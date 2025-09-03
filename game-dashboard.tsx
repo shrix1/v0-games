@@ -42,9 +42,11 @@ import CoinCollectorGame from "./coin-collector-game"
 import ConnectFourGame from "./connect-four-game"
 import WhackAMoleGame from "./whack-a-mole-game"
 import SimonSaysGame from "./simon-says-game"
+import Puzzle2048Game from "./puzzle-2048-game"
 
 type GameType =
   | "menu"
+  | "2048"
   | "simon-says"
   | "whack-a-mole"
   | "coin-collector"
@@ -72,6 +74,16 @@ export default function GameDashboard() {
   const [selectedCategory, setSelectedCategory] = useState<Category>("All")
 
   const games = [
+    {
+      id: "2048" as const,
+      title: "2048",
+      description: "Slide numbered tiles to reach 2048 - addictive puzzle challenge!",
+      icon: Grid3X3,
+      color: "bg-amber-500",
+      themeColor: "#f59e0b",
+      category: "Puzzle" as const,
+      isNew: true,
+    },
     {
       id: "simon-says" as const,
       title: "Simon Says",
@@ -260,6 +272,8 @@ export default function GameDashboard() {
       themeColor: gameData ? gameData.themeColor : "#000000",
     }
     switch (currentGame) {
+      case "2048":
+        return <Puzzle2048Game {...commonProps} />
       case "simon-says":
         return <SimonSaysGame {...commonProps} />
       case "whack-a-mole":
